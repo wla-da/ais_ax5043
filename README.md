@@ -8,7 +8,8 @@
 
 ## Железо
 1. Плата [ESP32-S3-Zero](https://cnx-software.ru/2024/08/07/waveshare-esp32-s3-zero-eto-miniatyurnyj-modul-wifi-i-ble-iot-s-portom-usb-c-do-32-gpio/)
-2. Радиочип AX5043 с самодельной обвязкой: TXCO, LDO, ВЧ-часть и тп
+2. Радиочип AX5043 с обвязкой: TXCO, LDO, ВЧ-часть и тп
+3. [TXCO Kyocera KT18 19,2 МГц](docs/TXCO%20Kyocera%20KT18%2019.2MHz.png) с подстройкой частоты
    
 
 ## Софт
@@ -18,7 +19,7 @@
 4. Агент [Qwen Code](https://qwen.ai/qwencode) и плагин [Qwen Code Companion](https://marketplace.visualstudio.com/items?itemName=qwenlm.qwen-code-vscode-ide-companion) для интеграции с Visual Studio Code. С 2026.04.15 бесплатный доступ к LLM закрыт
 5. Локальные MCP сервера: [Platformio MCP](https://github.com/jl-codes/platformio-mcp), [Serial monitor MCP](https://github.com/Adancurusul/serial-mcp-server), [GitHub MCP](https://github.com/github/github-mcp-server), [MCP PDF](https://github.com/rsp2k/mcp-pdf) быстрый PDF парсер с ~50 инструментами, [Document Parser MCP](https://github.com/agenson-tools/document-parser-mcp) от agenson, [Docling MCP](https://github.com/docling-project/docling-mcp) (использует [Docling](https://www.docling.ai/)), интегрированные с Continue/VS Code
 6. Различные браузерные LLM: ChatGPT, Deepseek, Qwen, Prism, Perplexity и другие
-7. Агрегаторы LLM: [https://build.nvidia.com](https://build.nvidia.com), [Open Router](https://openrouter.ai/models?q=free) 
+7. Агрегаторы LLM: [https://build.nvidia.com](https://build.nvidia.com), [Open Router](https://openrouter.ai/models?q=free), [Hugging Face](https://huggingface.co) 
 
 
 ## Вводная
@@ -43,52 +44,41 @@
 
 Рис 2. Назначение выводов ESP32-S3-Zero 
 
-
-![AX5043 gen](img/ax5043_scheme_sypmple_gen.png)
-
-Рис 3. Схема подключения AX5043 и ESP32-S3-Zero (простейший генератор для проверки)
-
 ![AX5043 assembly 1](img/ax5043_assembly1.png)
 ![AX5043 assembly 2](img/ax5043_assembly2.png)
 ![AX5043 assembly 3](img/ax5043_assembly3.png)
 
-Рис 4, 5, 6. Фото этапов сборки макетной платы с AX5043 и ESP32-S3-Zero (LDO для TXCO и AX5043 не распаяны)
+Рис 3, 4,5. Фото этапов сборки макетной платы с AX5043 и ESP32-S3-Zero (LDO для TXCO и AX5043 не распаяны)
 
-Для тестирования работы используется режим генератора несущей на частоте 161,975 МГц с уровнем -10 дБм с выводом ВЧ-сигнала с пина ANTP1 (5) с простейшей LC-цепочкой без фильтрации и согласования, пины ANTP (3) и ANTN (4) не задействованы.
-
-Таблица 1. Подключение шины SPI
-| AX5043    | ESP32-S3-Zero |
-| --------- | ------------  |
-| MOSI (17) | GPIO11 (14)   |
-| MISO (16) | GPIO13 (16)   |
-| CLK (15)  | GPIO12 (15)   |
-| SEL (17)  | GPIO10 (13)   | 
- 
-
-Для распайки AX5043 были заказаны на российском маркетплейсе платы-переходники QFN-28 на DIP, TXCO распаян временно на отдельной плате для удобства. Подключена шина SPI, IRQ, DATA, DATA_CLK. Первое включение, проверка сигнала на выходе SYSCLK (13) AX5043 - обнаружен стабильный меандр с частотой  1,200 МГц, т.е. AX5043 потенциально рабочая (по умолчанию включен делитель fXTAL/16, частота TXCO 19,200 Мгц), хотя была куплена по невысокой цене на российском маркетплейсе.
+После распайки была протестирована схема простейшего [генератора ВЧ сигнала на AX5043](src_test_gen/README), код для которого писал уже с использованием агента Continue и Qwen Code Companion (пока он давал бесплатный доступ к Qwen).
 
 
-## Программная часть тестового генератора
-
-Нужно было опробовать новый радиочип, разобраться с его режимами и регистрами. Решил сделать простой генератор несущей на 161,975 МГц. Конечно, писать полностью код для десятков регистров не очень удобно, поэтому воспользовался помощью ИИ агента.
-Примерно через полчаса работы агента (MCP сервера уже были установлены) я получил красивый компилируемый без ошибок код и сообщение:
-
-![LLM success](img/llm_success_gen.png)
-
-Рис 7. Агент радостно рапортует об успешном завершении работы.
-
-Конечно же, это была преждевременная радость и отладка кода (с переписыванием с нуля уже с помощью других LLM) заняла еще пару не полных дней. Посещали мысли - "а точно ли радиочип настоящий, а не фейковая копия?". Но в конце концов, всё получилось увидеть на спектроанализаторе заветный пик на нужной частоте.
-
-
-## Сравнение моделей (очень субъективно) 
+## Сравнение моделей (очень субъективно!) 
 
 Таблица 2. Субъективное сравние моделй
 | Модель | Провайдер | Использование  | Скорость | Точность | Комментарий |
 | ------ | --------- | -------------- | -------- | -------- | ----------- |
-| z-ai/glm5 | Nvidia | Continue/Agent | Средняя | Хорошая | Пишет по делу, галлюцинаций сравнительно немного, вполне качественный код. Бывает падает с ошибкой "400 Unterminated string starting at: line 1 column 12 (char 11)" |
+| z-ai/glm5 | Nvidia | Continue/Agent | Средняя/Низкая | Хорошая | Пишет по делу, галлюцинаций сравнительно немного, вполне качественный код. Бывает падает с ошибкой "400 Unterminated string starting at: line 1 column 12 (char 11)" |
 | moonshotai/kimi-k2-instruct-0905 | Nvidia | Continue/Agent | Средняя/Высокая | Хорошая | Достаточно шустрая модель, сравнительно немного глюков, Бывает падает с ошибкой "400 Unterminated string starting at: line 1 column 2 (char 1)" |
-| [qwen/qwen3-coder-480b-a35b-instruct](https://build.nvidia.com/qwen/qwen3-coder-480b-a35b-instruct) | Nvidia | Continue/Agent | Средняя/Высокая | Хорошая | Неплохое качество кода, даже может бороться с ошибкой вида "400 Unterminated string starting at: ..." через промет  |
+| [qwen/qwen3-coder-480b-a35b-instruct](https://build.nvidia.com/qwen/qwen3-coder-480b-a35b-instruct) | Nvidia | Continue/Agent | Средняя | Хорошая | Неплохое качество кода, даже может бороться с ошибкой вида "400 Unterminated string starting at: ..." через промт  |
+| [openai/gpt-oss-120b:free](https://openrouter.ai/openai/gpt-oss-120b:free) | OpenRouter | Continue/Agent | Высокая | Средняя | Неплохое качество кода, генерация быстрая, может не выполнять все инструкции/правила  |
 
+Есть и другие провайдеры, предоставляющие лимитированный доступ к бесплатным моделям:
+1. [OpenCode Zen](https://opencode.ai/docs/zen/#модели) от агента [OpenCode](https://opencode.ai/docs/ru/), сами модели можно использовать независимо от агента OpenCode через API
+2. [Groq](https://console.groq.com/docs/rate-limits), для работы с его моделями даже сделал простенький прокси, чтобы не использовать VPN
+3. Модели от [Alibaba](https://modelstudio.alibabacloud.com/), для регистрации нужно указывать банковскую карту
+4. [Hugging Face](https://huggingface.co) - по сути является аналогом GitHub для LLM и их инструментария
+
+Серьезное ограничение, помимо галлюцинаций - лимиты на токены/rps и тп. При использовании только бесплатных моделей через API сделать что то объемное весьма сложно. Так же скорость работы бесплатных моделей зачастую весьма и весьма печальная. Часто бесплатные модели перестают быть доступны по разным причинам: провайдер снял модель с публикации, модель сильно перегружена наплывом пользователей, изменения в ценовой политике и тп. 
+
+Даже возникла идея сделать прокси агрегатор с автоматическими апдейтами доступных бесплатных моделей, реализацией failover (автоматическое переключение на другую модель в случае недоступности первой), расчетом лимитов и тп. Проекты, которые могут быть полезны: 
+1. [LieLLM](https://www.litellm.ai/) - opensource шлюз для LLM, можно развернуть локально или использовать облако (за оплату)
+2. Браузер для бесплатных моделей OpenRouter [OpenRouter Free Model Explorer](https://github.com/jomonylw/openrouter-free-model)
+3. 
+
+## Приемник AIS
+
+Не забыть увеличить размер стека вызова `CONFIG_ESP_MAIN_TASK_STACK_SIZE=16384` (по умолчанию размер 3584 байт), пригодится при включении дебаг режима `#define AX5043_DEBUG true`. Изменить можно через menuconfig → Component config → FreeRTOS → Main task stack size
 
 ## TODO железо
 1. Управлять входами EN для TXCO и радиочипа с MCU для снижения энергопотребления
